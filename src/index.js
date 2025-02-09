@@ -1,17 +1,46 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { jwtDecode } from 'jwt-decode';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { privateRoute, publicRoute } from './Route';
+
+const RoutesConfig = () => {
+    const token = document.cookie ? document.cookie.split('=')[1] : null;
+    let isAdmin = false;
+
+    if (token) {
+        try {
+            const decoded = jwtDecode(token);
+            isAdmin = decoded?.admin;
+        } catch (error) {
+            console.error('Invalid token', error);
+        }
+    }
+
+    return (
+        <Routes>
+            {publicRoute.map((route, index) => (
+                <Route key={index} path={route.path} element={route.element} />
+            ))}
+            {privateRoute.map((route, index) => {
+                if (isAdmin) {
+                    return <Route key={index} path={route.path} element={route.element} />;
+                } else {
+                    return <Route key={index} path="/" element={<Navigate to="/" />} />;
+                }
+            })}
+        </Routes>
+    );
+};
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <React.StrictMode>
+        <Router>
+            <RoutesConfig />
+        </Router>
+    </React.StrictMode>,
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
